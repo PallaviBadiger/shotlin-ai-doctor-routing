@@ -1,0 +1,56 @@
+const router = require('express').Router();
+const { PrismaClient } = require('@prisma/client');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
+
+const prisma = new PrismaClient();
+function ok(res, data, status = 200) { return res.status(status).json({ success: true, data }); }
+function fail(res, msg, status = 400) { return res.status(status).json({ success: false, error: msg }); }
+
+// GET /api/doctor/reports
+router.get('/reports', authenticate, authorize('DOCTOR'), async (req, res) => {
+  try {
+    const doctor = await prisma.doctorProfile.findUnique({ where: { userId: req.user.id } });
+    if (!doctor) return fail(res, 'Doctor profile not found', 404);
+
+    const assignments = await prisma.doctorAssignment.findMany({
+      where:   { doctorProfileId: doctor.id },
+      include: {
+        report: {
+          include: { patient: true, aiAnalysis: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return ok(res, assignments);
+  } catch (e) {
+    return fail(res, e.message, 500);
+  }
+});
+
+// PATCH /api/doctor/reports/:id/mark-reviewed
+router.patch('/reports/:id/mark-reviewed', authenticate, authorize('DOCTOR'), async (req, res) => {
+  try {
+    const doctor = await prisma.doctorProfile.findUnique({ where: { userId: req.user.id } });
+    if (!doctor) return fail(res, 'Doctor profile not found', 404);
+
+    const assignment = await prisma.doctorAssignment.findUnique({ where: { reportId: req.params.id } });
+    if (!assignment) return fail(res, 'Assignment not found', 404);
+    if (assignment.doctorProfileId !== doctor.id) return fail(res, 'Access denied', 403);
+
+    const updated = await prisma.doctorAssignment.update({
+      where: { reportId: req.params.id },
+      data:  { reviewedAt: new Date() },
+    });
+
+    await prisma.patientReport.update({
+      where: { id: req.params.id },
+      data:  { status: 'REVIEWED' },
+    });
+
+    return ok(res, updated);
+  } catch (e) {
+    return fail(res, e.message, 500);
+  }
+});
+
+module.exports = router;

@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  role           Role            @default(PATIENT)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+
+  @@map("users")
+}
+
+enum Role {
+  PATIENT
+  ADMIN
+  DOCTOR
+}
+
+model PatientProfile {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  age       Int
+  gender    String
+  phone     String
+  createdAt DateTime        @default(now())
+  reports   PatientReport[]
+
+  @@map("patient_profiles")
+}
+
+model DoctorProfile {
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  category       DoctorCategory
+  specialization String
+  experience     Int
+  available      Boolean            @default(true)
+  bio            String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  assignments    DoctorAssignment[]
+
+  @@map("doctor_profiles")
+}
+
+enum DoctorCategory {
+  GENERAL_PHYSICIAN
+  CARDIOLOGIST
+  DERMATOLOGIST
+  ORTHOPEDIC
+  NEUROLOGIST
+  GYNECOLOGIST
+  PEDIATRICIAN
+  ENT_SPECIALIST
+  DIABETOLOGIST
+}
+
+model PatientReport {
+  id               String            @id @default(cuid())
+  patientProfileId String
+  patient          PatientProfile    @relation(fields: [patientProfileId], references: [id])
+  filePath         String
+  fileType         String
+  symptoms         String
+  reportTranscript String?
+  status           ReportStatus      @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  aiAnalysis       AIAnalysisLog?
+  assignment       DoctorAssignment?
+
+  @@map("patient_reports")
+}
+
+enum ReportStatus {
+  PENDING
+  EXTRACTED
+  ANALYZED
+  ASSIGNED
+  REVIEWED
+}
+
+model DoctorAssignment {
+  id              String        @id @default(cuid())
+  reportId        String        @unique
+  report          PatientReport @relation(fields: [reportId], references: [id])
+  doctorProfileId String
+  doctor          DoctorProfile @relation(fields: [doctorProfileId], references: [id])
+  assignedBy      AssignedBy    @default(AI)
+  reviewedAt      DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("doctor_assignments")
+}
+
+enum AssignedBy {
+  AI
+  ADMIN
+}
+
+model AIAnalysisLog {
+  id              String        @id @default(cuid())
+  reportId        String        @unique
+  report          PatientReport @relation(fields: [reportId], references: [id])
+  inputTranscript String
+  modelUsed       String
+  responseJson    String
+  success         Boolean
+  errorMessage    String?
+  createdAt       DateTime      @default(now())
+
+  @@map("ai_analysis_logs")
+}
