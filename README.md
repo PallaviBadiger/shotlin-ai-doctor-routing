@@ -2,11 +2,27 @@
 
 An intelligent healthcare SaaS platform that uses Google Gemini AI to parse medical reports, classify them by specialty, and automatically route them to the appropriate doctor.
 
-\## Demo Video
+\## ?? Live Demo
 
-\[? Watch Demo Video](https://drive.google.com/file/d/1DMdvh3s4Vzi2aThnpnsw64saYTZaviJY/view?usp=drive\_link)
+\*\*Frontend:\*\* https://shotlin-ai-doctor-routing.vercel.app
 
-## Features
+\*\*Backend:\*\* https://shotlin-backend.onrender.com
+
+\*\*Demo Video:\*\* https://drive.google.com/file/d/1DMdvh3s4Vzi2aThnpnsw64saYTZaviJY/view?usp=drive\_link
+
+
+
+\## Test Credentials
+
+| Role | Email | Password |
+
+|---|---|---|
+
+| Admin | admin@shotlin.com | Admin@1234 |
+
+| Doctor | dr.mehta@shotlin.com | Doctor@1234 |
+
+| Patient | patient@shotlin.com | Patient@1234 |Features
 
 * Role-based authentication (Admin, Doctor, Patient)
 * Patient report upload with OCR text extraction (JPG/PNG/PDF)
