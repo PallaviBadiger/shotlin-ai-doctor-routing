@@ -24,12 +24,12 @@ router.post('/register', [
   }
 
   try {
-    const { email, password, name, age, gender, phone } = req.body;
+    const { email, password, name, age, gender, phone, role: userRole } = req.body;
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return fail(res, 'Email already registered', 409);
 
     const role = req.body.role === 'DOCTOR' ? 'DOCTOR' : 'PATIENT';
-const role = req.body.role === 'DOCTOR' ? 'DOCTOR' : 'PATIENT';
+const role = userRole === 'DOCTOR' ? 'DOCTOR' : 'PATIENT';
 const user = await prisma.user.create({
   data: {
     email, password: hashed, role,
