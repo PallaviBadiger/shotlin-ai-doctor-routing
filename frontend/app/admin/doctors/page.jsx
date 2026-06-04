@@ -16,7 +16,7 @@ export default function AdminDoctors() {
   const [msg, setMsg] = useState(null)
   const [editing, setEditing] = useState(null)
 
-  const load = () => api.get('/api/doctors').then(d => setDoctors(d.doctors || [])).catch(() => {}).finally(() => setLoading(false))
+  const load = () => api.get('/api/doctors').then(d => setDoctors(d.data || d.doctors || [])).catch(() => {}).finally(() => setLoading(false))
   useEffect(() => { load() }, [])
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
