@@ -13,8 +13,8 @@ router.post('/register', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('name').trim().notEmpty().withMessage('Name required'),
-  body('age').isInt({ min: 1, max: 120 }).withMessage('Valid age required'),
-  body('gender').isIn(['Male', 'Female', 'Other', 'Prefer not to say']).withMessage('Gender required'),
+  body('age').if(body('role').not().equals('DOCTOR')).isInt({ min: 1, max: 120 }).withMessage('Valid age required'),
+  body('gender').if(body('role').not().equals('DOCTOR')).isIn(['Male', 'Female', 'Other', 'Prefer not to say']).withMessage('Gender required'),  
   body('phone').optional(),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -28,14 +28,25 @@ router.post('/register', [
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return fail(res, 'Email already registered', 409);
 
-    const hashed = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: {
-        email, password: hashed, role: 'PATIENT',
-        patientProfile: { create: { name, age: parseInt(age), gender, phone: phone || '' } },
-      },
-      include: { patientProfile: true },
-    });
+    const role = req.body.role === 'DOCTOR' ? 'DOCTOR' : 'PATIENT';
+const role = req.body.role === 'DOCTOR' ? 'DOCTOR' : 'PATIENT';
+const user = await prisma.user.create({
+  data: {
+    email, password: hashed, role,
+    ...(role === 'PATIENT' && {
+      patientProfile: { create: { name, age: parseInt(age), gender, phone: phone || '' } }
+    }),
+    ...(role === 'DOCTOR' && {
+      doctorProfile: { create: { 
+        name, 
+        category: req.body.category?.toUpperCase().replace(/ /g,'_') || 'GENERAL_PHYSICIAN',
+        specialization: req.body.specialization || '',
+        experience: parseInt(req.body.experience) || 0,
+      }}
+    }),
+  },
+  include: { patientProfile: true, doctorProfile: true },
+});
 
     const token = jwt.sign(
       { id: user.id, role: user.role, email: user.email },
